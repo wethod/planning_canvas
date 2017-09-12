@@ -3,51 +3,59 @@ var Layout = Marionette.LayoutView.extend({
     template: '#bodyLayout',
     _canvas: null,
     _tiles: [],
-    _size: 40,
+    _size: 35,
     _margin: 5,
-    _outerSize: 45,
+    _outerSize: 40,
     _isErasing: false,
     _forceRow: true,
-    _canvasSize: 2025,
+    _canvasSize: 1800,
     _tilesPerRow: 45, // (_canvasSize / _outerSize)
     _lastPos: {},
     ui: {
         canvas: '[data-region="canvas"]',
+        canvasUpper: '[data-region="canvasUpper"]',
         fill: '[data-region="fill"]',
         forceRow: '[data-region="forceRow"]',
+        showHide: '[data-region="showHide"]',
     },
     events: {
-        'mousedown @ui.canvas': 'listenMove',
-        'mouseup @ui.canvas': 'stopListeningMove',
-        'mouseout @ui.canvas': 'stopListeningMove',
+        'mousedown @ui.canvasUpper': 'listenMove',
+        'mouseup @ui.canvasUpper': 'stopListeningMove',
+        'mouseout @ui.canvasUpper': 'stopListeningMove',
         'click @ui.fill': 'fill',
         'click @ui.forceRow': 'forceRow',
+        'click @ui.showHide': 'showHideElement',
     },
     onRender: function() {
         this._canvas = this.ui.canvas[0].getContext('2d');
+        this._canvasUpper = this.ui.canvasUpper[0].getContext('2d');
         var ratio = window.devicePixelRatio;
 
-        this._canvas.canvas.style.width = this._canvas.canvas.width + "px";
-        this._canvas.canvas.style.height = this._canvas.canvas.height + "px";
+        this._canvasUpper.canvas.style.width = this._canvas.canvas.width + "px";
+        this._canvasUpper.canvas.style.height = this._canvas.canvas.height + "px";
 
-        this._canvas.canvas.width = this._canvas.canvas.width * ratio;
-        this._canvas.canvas.height = this._canvas.canvas.height * ratio;
+        this._canvasUpper.canvas.width = this._canvas.canvas.width * ratio;
+        this._canvasUpper.canvas.height = this._canvas.canvas.height * ratio;
 
-        this._canvas.scale(ratio, ratio);
+        this._canvasUpper.scale(ratio, ratio);
 
         this._canvas.font = '10px serif';
         this._canvas.font = 'top';
+        this._canvasUpper.fillStyle = 'white';
 
         this.fill();
+        this.onScroll();
+
+        $(window).on('scroll', this.onScroll.bind(this));
     },
     listenMove: function(event) {
         var pos = this.getCoordinatesFromEvent(event);
         this.setErasing(pos);
-        this.ui.canvas.on('mousemove', this.onMouseMove.bind(this));
+        this.ui.canvasUpper.on('mousemove', this.onMouseMove.bind(this));
         this.onMouseMove(event);
     },
     stopListeningMove: function() {
-        this.ui.canvas.off('mousemove');
+        this.ui.canvasUpper.off('mousemove');
         this._isErasing = false;
         this._lastPos = {};
     },
@@ -84,9 +92,8 @@ var Layout = Marionette.LayoutView.extend({
         this._canvas.fillRect(pos.x, pos.y, this._size, this._size);
     },
     drawText: function(pos, color) {
-        //this._canvas.fillStyle = '#' + (999999 - color.replace('#', ''));
-        this._canvas.fillStyle = 'white';
-        this._canvas.fillText(Math.round(Math.random() * 100), pos.x + 6, pos.y + 16, this._size);
+        this._canvasUpper.clearRect(pos.x, pos.y, this._size, this._size);
+        this._canvasUpper.fillText(Math.round(Math.random() * 100), pos.x + 6, pos.y + 16, this._size);
     },
     getCoordinatesFromEvent(event) {
         var canvasLeft = event.currentTarget.offsetLeft;
@@ -128,6 +135,43 @@ var Layout = Marionette.LayoutView.extend({
     getRandomColor: function() {
         return '#' + Math.round(Math.random() * 999999); // random color up to #999999
     },
+    onScroll: function() {
+        if(this.isElementVisible()){
+            this.showElement();
+        } else {
+            this.hideElement();
+        }
+    },
+    showHideElement: function() {
+        if(this.ui.canvas.css('visibility') == 'visible') {
+            this.ui.canvas.css('visibility', 'hidden');
+            this.ui.canvasUpper.css('visibility', 'hidden');
+        } else {
+            this.ui.canvas.css('visibility', 'visible');
+            this.ui.canvasUpper.css('visibility', 'visible');
+        }
+    },
+    showElement: function() {
+        this.ui.canvas.css('visibility', 'visible');
+        this.ui.canvasUpper.css('visibility', 'visible');
+    },
+    hideElement: function() {
+        this.ui.canvas.css('visibility', 'hidden');
+        this.ui.canvasUpper.css('visibility', 'hidden');
+    },
+    isElementVisible: function(event) {
+        var canvasLeft = this.$el[0].getBoundingClientRect().left;
+        var canvasTop = this.$el[0].getBoundingClientRect().top;
+        var canvasHeight = this.ui.canvas.height();
+        var canvasWidth = this.ui.canvas.width();
+
+        var windowHeight = (window.innerHeight || document.documentElement.clientHeight);
+        var windowWidth = (window.innerWidth || document.documentElement.clientWidth);
+        var vertInView = (canvasTop <= windowHeight) && ((canvasTop + canvasHeight) >= 0);
+        var horInView = (canvasLeft <= windowWidth) && ((canvasLeft + canvasWidth) >= 0);
+
+        return (vertInView && horInView);
+    }
 });
 
 var Layout2 = Layout.extend({el: '[data-region="body2"]'});

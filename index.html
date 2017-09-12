@@ -10,6 +10,8 @@
 
         <style media="screen">
             canvas { border: 1px solid black; margin: 20px 0; }
+            .canvas-wrapper { position: relative; }
+            .canvasUpper { position: absolute; z-index: 100; }
         </style>
     </head>
     <body>
@@ -24,11 +26,13 @@
 
         <!-- Templates -->
         <script type="text/template" id="bodyLayout">
-            <div>
+            <div class=canvas-wrapper>
                 <button data-region="fill">fill random</button>
                 <button data-region="forceRow">free draw / only row</button>
+                <button data-region="showHide">show / hide</button>
             </div>
-            <canvas data-region="canvas" width="2025" height="2025"></canvas>
+            <canvas class="canvasUpper" data-region="canvasUpper" width="1800" height="1800" style="visibility:hidden;"></canvas>
+            <canvas data-region="canvas" width="1800" height="1800" style="visibility:hidden;"></canvas>
         </script>
 
         <!-- Script -->
